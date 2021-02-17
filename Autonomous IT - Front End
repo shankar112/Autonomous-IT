@@ -1,0 +1,785 @@
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="AdminHome.aspx.cs" Inherits="AdminHome" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+    <asp:Button ID="Button1" runat="server" Text="Users"  PostBackUrl="~/Users.aspx" />
+    <asp:Button ID="Button2" runat="server" Text="Login History"  PostBackUrl="~/LoginHistory.aspx" />
+    <asp:Button ID="Button3" runat="server" Text="File Transfered History"  PostBackUrl="~/FileTransfered.aspx" />
+    <asp:Button ID="Button4" runat="server" Text="Log Out" 
+        onclick="Button4_Click" />
+    
+</asp:Content>
+
+
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Data.SqlClient;
+
+public partial class AdminHome : System.Web.UI.Page
+{
+    protected void Page_Load(object sender, EventArgs e)
+    {
+
+    }
+    protected void Button4_Click(object sender, EventArgs e)
+    {
+        SqlConnection con = new SqlConnection(DbClass.dbconnectionstr);
+       /* con.Open();
+        SqlCommand cmd = new SqlCommand("update TblLoginSession set logouttime ='" + DateTime.Now.ToString()+ "' where id=" + int.Parse(Session["loginid"].ToString()) + " ", con);
+        cmd.ExecuteNonQuery();
+        con.Close();
+        */ 
+        Session["username"] = null;
+        Response.Redirect("Login.aspx");
+    }
+}
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="Default.aspx.cs" Inherits="_Default" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+
+
+<div style="font-family:Calibri; font-size:middle; color:steelblue; background-color:White">
+<table>
+<tr>
+<td> 
+
+    <p style="font-style: italic">
+AUTONOMOUS  IT ,<br /> 
+        <br /></p>
+    <p style="font-style: italic">
+        &nbsp;</p>
+</td>
+<td width="100PX">
+</td>
+<td>
+<img src="images/images (1).jpg" />
+</td>
+</tr>
+</table>
+<br /><br /><br /><br /><br />
+</div>
+</asp:Content>
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="DownloadFile.aspx.cs" Inherits="DownloadFile" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+ <asp:HyperLink ID="HyperLink1" runat="server" NavigateUrl="~/userHome.aspx">Back</asp:HyperLink>
+    <asp:GridView ID="GridView1" runat="server" 
+        onselectedindexchanged="GridView1_SelectedIndexChanged">
+        <Columns>
+            <asp:CommandField SelectText="Download" ShowSelectButton="True" />
+        </Columns>
+    </asp:GridView>
+</asp:Content>
+
+
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Data.SqlClient;
+using System.IO;
+
+public partial class DownloadFile : System.Web.UI.Page
+{
+    SqlConnection con = new SqlConnection(DbClass.dbconnectionstr);
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        DataTable dt=new DataTable();
+        SqlDataAdapter da = new SqlDataAdapter("select id,Filename,fromusername,fileextension,secretkey,datetime from TblFileTransfer where tousername='" + Session["username"].ToString() + "'", con);
+        da.Fill(dt);
+        GridView1.DataSource = dt;
+        GridView1.DataBind();
+    }
+    protected void GridView1_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        GridViewRow grow = GridView1.SelectedRow;
+        int id=int.Parse(grow.Cells[1].Text.ToString());
+        con.Open();
+        SqlCommand cmd = new SqlCommand("select filename,fileextension,filedata,secretkey from TblFileTransfer where id=" + id, con);
+        SqlDataReader dr=cmd.ExecuteReader();
+        if (dr.Read())
+        {
+            File.WriteAllBytes("D:\\"+dr[0].ToString() + dr[1].ToString(), (byte[])dr[2]);
+            EncDec obj = new EncDec();
+            obj.DecryptFile("D:\\" + dr[0].ToString() + dr[1].ToString(), "D:\\Dec" + dr[0].ToString() + dr[1].ToString(), dr[3].ToString());
+        }
+        con.Close();
+    }
+}
+
+
+<%@ Page Language="C#" AutoEventWireup="true" CodeFile="Error.aspx.cs" Inherits="Error" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>Untitled Page</title>
+    <script type="text/javascript">
+    
+      function pageLoad() {
+      }
+    
+    </script>
+</head>
+<body style="background-image:url(images/server busy.jpg); background-repeat:no-repeat; " >
+    <form id="form1" runat="server">
+    <div>
+        <asp:ScriptManager ID="ScriptManager1" runat="server" />
+        
+
+    </form>
+</body>
+</html>
+
+
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+
+public partial class Error : System.Web.UI.Page
+{
+    protected void Page_Load(object sender, EventArgs e)
+    {
+
+    }
+}
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="FileTransfered.aspx.cs" Inherits="FileTransfered" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+    <asp:LinkButton ID="LinkButton1" runat="server" PostBackUrl="~/Login.aspx">Back</asp:LinkButton>
+    <asp:GridView ID="GridView1" runat="server">
+    </asp:GridView>
+
+</asp:Content>
+
+
+using System;
+using System.Collections;
+using System.Configuration;
+using System.Data;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Data.SqlClient;
+
+public partial class FileTransfered : System.Web.UI.Page
+{
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        SqlConnection con = new SqlConnection(DbClass.dbconnectionstr);
+        DataTable dt = new DataTable();
+        SqlDataAdapter da;
+        if(Session["username"].ToString()=="admin")
+            da= new SqlDataAdapter("select id, filename,tousername,fromusername,fileextension,secretkey,datetime from TblFileTransfer ", con);
+        else
+            da = new SqlDataAdapter("select id, filename,tousername,fromusername,fileextension,secretkey,datetime from TblFileTransfer  where tousername='" + Session["username"].ToString() + "'", con);
+        da.Fill(dt);
+        GridView1.DataSource = dt;
+        GridView1.DataBind();
+    }
+}
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="Login.aspx.cs" Inherits="Login" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+<div style="font-family:Calibri; font-size:middle; color:steelblue; background-color:White">
+<table>
+<tr>
+
+<td>
+<img src="images/images (2).jpg" />
+  </td>
+  <td>
+  
+  
+      <asp:Login ID="Login1" runat="server" 
+          CreateUserIconUrl="~/images/ico_users.gif" CreateUserText="New User?" 
+          Height="171px" LoginButtonImageUrl="~/images/login.jpg" LoginButtonType="Image" 
+          onauthenticate="Login1_Authenticate" Width="248px" 
+          CreateUserUrl="~/SignUp.aspx">
+      </asp:Login>
+  </td>
+</tr>
+</table>
+</div>
+
+</asp:Content>
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="LoginHistory.aspx.cs" Inherits="LoginHistory" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+<asp:LinkButton ID="LinkButton1" runat="server" PostBackUrl="~/Login.aspx">Back</asp:LinkButton>
+    <asp:GridView ID="GridView1" runat="server">
+    </asp:GridView>
+</asp:Content>
+
+
+<%@ Master Language="C#" AutoEventWireup="true" CodeFile="MasterPage.master.cs" Inherits="MasterPage" %>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>Security and Privacy in Cloud Computing</title>
+    <asp:ContentPlaceHolder id="head" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body style="background-color:steelblue;" background="images/Bg3.png">
+    <form id="form1" runat="server">
+    <div>
+    <br /><br />
+    <table align="center" width="1000px" style="background-color:steelblue" >
+    <tr>
+    <td>    <img src="images/Banner1.png" /> </td>
+    </tr>
+    <tr>
+    <td>  
+        <asp:Menu ID="Menu1" runat="server" Font-Bold="False" Font-Size="25px" 
+            Orientation="Horizontal">
+            <StaticMenuItemStyle Font-Underline="False" ForeColor="White" 
+                HorizontalPadding="20px" ItemSpacing="10px" />
+            <StaticHoverStyle Font-Bold="True" Font-Underline="True" />
+            <Items>
+                <asp:MenuItem Text="Home" Value="Home" NavigateUrl="~/Default.aspx"></asp:MenuItem>
+                <asp:MenuItem Text="Login" Value="Login" NavigateUrl="~/Login.aspx"></asp:MenuItem>
+            </Items>
+        </asp:Menu>
+    </td>
+    </tr>
+    
+    <tr>
+    <td style="font-family:Calibri; font-size:middle; color:steelblue; background-color:White">
+    
+    <asp:ContentPlaceHolder id="ContentPlaceHolder1" runat="server">
+        
+        </asp:ContentPlaceHolder>
+    </td>
+    </tr>
+    </table>
+        
+    </div>
+    </form>
+</body>
+</html>
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="SendFile.aspx.cs" Inherits="SendFile" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+    <style type="text/css">
+        .style1
+        {
+            width: 23px;
+        }
+        .style2
+        {
+            width: 149px;
+        }
+        .style3
+        {
+            width: 115px;
+        }
+    </style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+<table align="center">
+<tr>
+<td class="style2">&nbsp;</td>
+<td>&nbsp;</td>
+<td class="style1"> &nbsp;</td> 
+<td> &nbsp;</td> 
+<td class="style3"> &nbsp;</td> 
+</tr>
+<tr>
+<td class="style2">&nbsp;</td>
+<td>Username </td>
+<td class="style1"> &nbsp;</td> 
+<td> <asp:DropDownList ID="DDL_username" runat="server"> </asp:DropDownList> </td> 
+<td class="style3"> &nbsp;</td> 
+</tr>
+<tr>
+<td class="style2"> &nbsp;</td>
+<td> Filename </td>
+<td class="style1">  &nbsp;</td>
+<td>  <asp:TextBox ID="TxtFilename" runat="server"></asp:TextBox></td>
+<td class="style3">  &nbsp;</td>
+</tr>
+<tr>
+<td class="style2">&nbsp;</td>
+<td>Upload File </td>
+<td class="style1"> &nbsp;</td>
+<td> <asp:FileUpload ID="FileUpload1" runat="server" /> </td>
+<td class="style3"> &nbsp;</td>
+</tr>
+<tr>
+<td class="style2">&nbsp;</td>
+<td>Secret Key </td>
+<td class="style1">  &nbsp;</td>
+<td>  <asp:TextBox ID="TxtSecretKey" runat="server"></asp:TextBox></td>
+<td class="style3">  &nbsp;</td>
+</tr>
+<tr align="center">
+<td class="style2"> &nbsp;</td>
+<td colspan="3"> <asp:Button ID="Button1" runat="server" Text="Encryption & Upload" 
+        onclick="Button1_Click" /> </td>
+</tr>
+
+
+
+</table>
+
+</asp:Content>
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="SignUp.aspx.cs" Inherits="SignUp" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+    <style type="text/css">
+        .style1
+        {
+            width: 170px;
+        }
+        .style2
+        {
+            width: 15px;
+        }
+        .style3
+        {
+            width: 13px;
+        }
+        .style4
+        {
+            width: 52px;
+        }
+    </style>
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+<div style="font-family:Calibri; font-size:middle; color:steelblue; background-color:White">
+<table >
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style2" rowspan="10">  
+    <asp:Image ID="Image1" runat="server" ImageUrl="~/images/newusers.jpg" />
+    </td>
+<td class="style3">  &nbsp;</td>
+<td>  First Name </td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtFname" runat="server"></asp:TextBox></td>
+</tr>
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  Last Name </td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtLname" runat="server"></asp:TextBox></td>
+</tr>
+
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  Username </td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtUname" runat="server"></asp:TextBox></td>
+</tr>
+
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  Password </td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtPwd" runat="server" TextMode="Password"></asp:TextBox></td>
+</tr>
+
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  Confirm Password</td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtCPwd" runat="server" TextMode="Password"></asp:TextBox></td>
+</tr>
+
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  Address </td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtAddress" runat="server"></asp:TextBox></td>
+</tr>
+
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  Nationality </td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtNationality" runat="server"></asp:TextBox></td>
+</tr>
+
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  System Ip </td>
+<td class="style4"> </td>
+<td> <asp:TextBox ID="TxtIP" runat="server" Enabled=false></asp:TextBox></td>
+</tr>
+
+<tr>
+<td class="style1">  &nbsp;</td>
+<td class="style3">  &nbsp;</td>
+<td>  &nbsp;</td>
+<td class="style4"> &nbsp;</td>
+<td> &nbsp;</td>
+</tr>
+
+<tr align="center">
+<td class="style1">   &nbsp;</td>
+
+
+<td class="style3">   &nbsp;</td>
+
+
+<td colspan="3">   
+    <asp:ImageButton ID="ImageButton1" runat="server" Height="29px" 
+        ImageUrl="~/images/SignUpButton 2.jpg" style="margin-bottom: 0px" 
+        Width="166px" onclick="ImageButton1_Click" />
+    </td>
+
+
+    <td>
+        <asp:ImageButton ID="ImageButton2" runat="server" ImageUrl="~/images/index.jpg" 
+            PostBackUrl="~/Login.aspx" />
+    </td>
+
+
+</tr>
+
+</table>
+</div>
+
+</asp:Content>
+
+
+body {
+}
+
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="UserHome.aspx.cs" Inherits="UserHome" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+    <asp:Button ID="Button1" runat="server" Text=" Login History " PostBackUrl="~/LoginHistory.aspx" />
+    <asp:Button ID="Button2" runat="server" Text=" Profile " PostBackUrl="~/Users.aspx" />
+    <asp:Button ID="Button3" runat="server" Text="File Transfered History" PostBackUrl="~/FileTransfered.aspx" />
+<asp:Button ID="Button4" runat="server"  Text="Upload File" PostBackUrl="~/SendFile.aspx" />
+<asp:Button ID="Button5" runat="server"  Text="Download File" PostBackUrl="~/DownloadFile.aspx" />
+
+<asp:Button ID="Button6" runat="server"  Text="Log Out" onclick="Button6_Click" />
+</asp:Content>
+
+
+<%@ Page Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="Users.aspx.cs" Inherits="Users" Title="Untitled Page" %>
+
+<asp:Content ID="Content1" ContentPlaceHolderID="head" Runat="Server">
+</asp:Content>
+<asp:Content ID="Content2" ContentPlaceHolderID="ContentPlaceHolder1" Runat="Server">
+    <asp:LinkButton ID="LinkButton1" runat="server" PostBackUrl="~/Login.aspx" >Back</asp:LinkButton><br />
+    <br />
+    <asp:GridView ID="GridView1" runat="server">
+    </asp:GridView>
+    <asp:DetailsView ID="DetailsView1" runat="server" Height="50px" Width="125px">
+    </asp:DetailsView>
+</asp:Content>
+
+<?xml version="1.0"?>
+<!-- 
+    Note: As an alternative to hand editing this file you can use the 
+    web admin tool to configure settings for your application. Use
+    the Website->Asp.Net Configuration option in Visual Studio.
+    A full list of settings and comments can be found in 
+    machine.config.comments usually located in 
+    \Windows\Microsoft.Net\Framework\v2.x\Config 
+-->
+<configuration>
+	<configSections>
+		<sectionGroup name="system.web.extensions" type="System.Web.Configuration.SystemWebExtensionsSectionGroup, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35">
+			<sectionGroup name="scripting" type="System.Web.Configuration.ScriptingSectionGroup, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35">
+				<section name="scriptResourceHandler" type="System.Web.Configuration.ScriptingScriptResourceHandlerSection, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" requirePermission="false" allowDefinition="MachineToApplication"/>
+				<sectionGroup name="webServices" type="System.Web.Configuration.ScriptingWebServicesSectionGroup, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35">
+					<section name="jsonSerialization" type="System.Web.Configuration.ScriptingJsonSerializationSection, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" requirePermission="false" allowDefinition="Everywhere"/>
+					<section name="profileService" type="System.Web.Configuration.ScriptingProfileServiceSection, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" requirePermission="false" allowDefinition="MachineToApplication"/>
+					<section name="authenticationService" type="System.Web.Configuration.ScriptingAuthenticationServiceSection, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" requirePermission="false" allowDefinition="MachineToApplication"/>
+					<section name="roleService" type="System.Web.Configuration.ScriptingRoleServiceSection, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" requirePermission="false" allowDefinition="MachineToApplication"/>
+				</sectionGroup>
+			</sectionGroup>
+		</sectionGroup>
+	</configSections>
+	<appSettings/>
+	<connectionStrings/>
+	<system.web>
+		<!-- 
+            Set compilation debug="true" to insert debugging 
+            symbols into the compiled page. Because this 
+            affects performance, set this value to true only 
+            during development.
+        -->
+		<compilation debug="true">
+			<assemblies>
+				<add assembly="System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=B77A5C561934E089"/>
+				<add assembly="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+				<add assembly="System.Data.DataSetExtensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=B77A5C561934E089"/>
+				<add assembly="System.Xml.Linq, Version=3.5.0.0, Culture=neutral, PublicKeyToken=B77A5C561934E089"/>
+			</assemblies>
+		</compilation>
+		<!--
+            The <authentication> section enables configuration 
+            of the security authentication mode used by 
+            ASP.NET to identify an incoming user. 
+        -->
+		<authentication mode="Windows"/>
+		<!--
+            The <customErrors> section enables configuration 
+            of what to do if/when an unhandled error occurs 
+            during the execution of a request. Specifically, 
+            it enables developers to configure html error pages 
+            to be displayed in place of a error stack trace.
+
+        <customErrors mode="RemoteOnly" defaultRedirect="GenericErrorPage.htm">
+            <error statusCode="403" redirect="NoAccess.htm" />
+            <error statusCode="404" redirect="FileNotFound.htm" />
+        </customErrors>
+        -->
+		<pages>
+			<controls>
+				<add tagPrefix="asp" namespace="System.Web.UI" assembly="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+				<add tagPrefix="asp" namespace="System.Web.UI.WebControls" assembly="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+			</controls>
+		</pages>
+		<httpHandlers>
+			<remove verb="*" path="*.asmx"/>
+			<add verb="*" path="*.asmx" validate="false" type="System.Web.Script.Services.ScriptHandlerFactory, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+			<add verb="*" path="*_AppService.axd" validate="false" type="System.Web.Script.Services.ScriptHandlerFactory, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+			<add verb="GET,HEAD" path="ScriptResource.axd" type="System.Web.Handlers.ScriptResourceHandler, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35" validate="false"/>
+		</httpHandlers>
+		<httpModules>
+			<add name="ScriptModule" type="System.Web.Handlers.ScriptModule, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+		</httpModules>
+	</system.web>
+	<system.codedom>
+		<compilers>
+			<compiler language="c#;cs;csharp" extension=".cs" warningLevel="4" type="Microsoft.CSharp.CSharpCodeProvider, System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+				<providerOption name="CompilerVersion" value="v3.5"/>
+				<providerOption name="WarnAsError" value="false"/>
+			</compiler>
+			<compiler language="vb;vbs;visualbasic;vbscript" extension=".vb" warningLevel="4" type="Microsoft.VisualBasic.VBCodeProvider, System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+				<providerOption name="CompilerVersion" value="v3.5"/>
+				<providerOption name="OptionInfer" value="true"/>
+				<providerOption name="WarnAsError" value="false"/>
+			</compiler>
+		</compilers>
+	</system.codedom>
+	<!-- 
+        The system.webServer section is required for running ASP.NET AJAX under Internet
+        Information Services 7.0.  It is not necessary for previous version of IIS.
+    -->
+	<system.webServer>
+		<validation validateIntegratedModeConfiguration="false"/>
+		<modules>
+			<remove name="ScriptModule"/>
+			<add name="ScriptModule" preCondition="managedHandler" type="System.Web.Handlers.ScriptModule, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+		</modules>
+		<handlers>
+			<remove name="WebServiceHandlerFactory-Integrated"/>
+			<remove name="ScriptHandlerFactory"/>
+			<remove name="ScriptHandlerFactoryAppServices"/>
+			<remove name="ScriptResource"/>
+			<add name="ScriptHandlerFactory" verb="*" path="*.asmx" preCondition="integratedMode" type="System.Web.Script.Services.ScriptHandlerFactory, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+			<add name="ScriptHandlerFactoryAppServices" verb="*" path="*_AppService.axd" preCondition="integratedMode" type="System.Web.Script.Services.ScriptHandlerFactory, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+			<add name="ScriptResource" preCondition="integratedMode" verb="GET,HEAD" path="ScriptResource.axd" type="System.Web.Handlers.ScriptResourceHandler, System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31BF3856AD364E35"/>
+		</handlers>
+	</system.webServer>
+	<runtime>
+		<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1" appliesTo="v2.0.50727"><dependentAssembly>
+				<assemblyIdentity name="System.Web.Extensions" publicKeyToken="31bf3856ad364e35"/>
+				<bindingRedirect oldVersion="1.0.0.0-1.1.0.0" newVersion="3.5.0.0"/>
+			</dependentAssembly>
+			<dependentAssembly>
+				<assemblyIdentity name="System.Web.Extensions.Design" publicKeyToken="31bf3856ad364e35"/>
+				<bindingRedirect oldVersion="1.0.0.0-1.1.0.0" newVersion="3.5.0.0"/>
+			</dependentAssembly>
+		</assemblyBinding></runtime>
+</configuration>
+
+
+
+using System;
+using System.Data;
+using System.Configuration;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+
+public class DbClass
+{
+    public static string dbconnectionstr = "Data Source=GNANAGURU-PC\\SQLEXPRESS;Initial Catalog=Security_Privacy_Db;Integrated Security=True;;Pooling=False";
+	public DbClass()
+	{
+		
+	}
+}
+
+
+using System;
+using System.Data;
+using System.Configuration;
+using System.Linq;
+using System.Web;
+using System.Web.Security;
+using System.Web.UI;
+using System.Web.UI.HtmlControls;
+using System.Web.UI.WebControls;
+using System.Web.UI.WebControls.WebParts;
+using System.Xml.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.IO;
+
+public class EncDec
+{
+    public EncDec()
+    {
+        //
+        // TODO: Add constructor logic here
+        //
+    }
+
+    /// Encrypts a file using Rijndael algorithm.
+    ///</summary>
+    ///<param name="inputFile"></param>
+    ///<param name="outputFile"></param>
+    public void EncryptFile(string inputFile, string outputFile,string password )
+    {
+
+        try
+        {
+            UnicodeEncoding UE = new UnicodeEncoding();
+            byte[] key = UE.GetBytes(password);
+
+            string cryptFile = outputFile;
+            FileStream fsCrypt = new FileStream(cryptFile, FileMode.Create);
+
+            RijndaelManaged RMCrypto = new RijndaelManaged();
+
+            CryptoStream cs = new CryptoStream(fsCrypt,
+                RMCrypto.CreateEncryptor(key, key),
+                CryptoStreamMode.Write);
+
+            FileStream fsIn = new FileStream(inputFile, FileMode.Open);
+
+            int data;
+            while ((data = fsIn.ReadByte()) != -1)
+                cs.WriteByte((byte)data);
+
+
+            fsIn.Close();
+            cs.Close();
+            fsCrypt.Close();
+        }
+        catch
+        {
+            Console.Write("Encryption failed!", "Error");
+        }
+    }
+
+    ///
+    /// Decrypts a file using Rijndael algorithm.
+    ///</summary>
+    ///<param name="inputFile"></param>
+    ///<param name="outputFile"></param>
+    public void DecryptFile(string inputFile, string outputFile, string password)
+    {
+
+        {
+            
+
+            UnicodeEncoding UE = new UnicodeEncoding();
+            byte[] key = UE.GetBytes(password);
+
+            FileStream fsCrypt = new FileStream(inputFile, FileMode.Open);
+
+            RijndaelManaged RMCrypto = new RijndaelManaged();
+
+            CryptoStream cs = new CryptoStream(fsCrypt,
+                RMCrypto.CreateDecryptor(key, key),
+                CryptoStreamMode.Read);
+
+            FileStream fsOut = new FileStream(outputFile, FileMode.Create);
+
+            int data;
+            while ((data = cs.ReadByte()) != -1)
+                fsOut.WriteByte((byte)data);
+
+            fsOut.Close();
+            cs.Close();
+            fsCrypt.Close();
+
+        }
+    }
+}
